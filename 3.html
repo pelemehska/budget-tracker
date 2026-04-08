@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бюджет-трекер</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+
+        :root{
+            --bg:#0c0a1a;
+            --surface:rgba(22,18,42,0.85);
+            --border:rgba(139,92,246,0.12);
+            --purple:#a855f7;
+            --purple-light:#c084fc;
+            --purple-dim:#7a6da0;
+            --green:#4ade80;
+            --green-dim:rgba(74,222,128,0.15);
+            --amber:#fbbf24;
+            --red:#f87171;
+            --red-dim:rgba(248,113,113,0.15);
+            --blue:#60a5fa;
+            --text:#e8e4f0;
+            --text-dim:#8b7faa;
+            --text-muted:#5a4f7a;
+            --radius:clamp(12px,3vw,16px);
+            --card-pad:clamp(14px,3.5vw,20px);
+            --font-sm:clamp(0.6rem,1.8vw,0.72rem);
+            --font-md:clamp(0.75rem,2.2vw,0.88rem);
+            --font-lg:clamp(0.9rem,2.8vw,1.1rem);
+            --font-xl:clamp(1.1rem,3.5vw,1.5rem);
+            --font-xxl:clamp(1.3rem,4.5vw,1.8rem);
+            --btn-h:clamp(44px,10vw,52px);
+        }
+
+        html{
+            font-size:16px;
+            -webkit-text-size-adjust:100%;
+        }
+
+        body{
+            font-family:'Inter',sans-serif;
+            background:var(--bg);
+            color:var(--text);
+            min-height:100vh;
+            min-height:100dvh;
+            overflow-x:hidden;
+            position:relative;
+        }
+
+        body::before{
+            content:'';
+            position:fixed;
+            top:-40%;left:-20%;
+            width:70vw;height:70vw;
+            background:radial-gradient(circle,rgba(139,92,246,0.12) 0%,transparent 70%);
+            pointer-events:none;
+            z-index:0;
+        }
+
+        body::after{
+            content:'';
+            position:fixed;
+            bottom:-30%;right:-15%;
+            width:60vw;height:60vw;
+            background:radial-gradient(circle,rgba(168,85,247,0.08) 0%,transparent 70%);
+            pointer-events:none;
+            z-index:0;
+        }
+
+        .wrapper{
+            width:100%;
+            max-width:520px;
+            margin:0 auto;
+            position:relative;
+            z-index:1;
+            padding:clamp(10px,2.5vw,16px);
+            padding-bottom:clamp(100px,22vw,130px);
+        }
+
+        /* ── Animations ── */
+        @keyframes fadeUp{
+            from{opacity:0;transform:translateY(10px)}
+            to{opacity:1;transform:translateY(0)}
+        }
+
+        @keyframes fadeIn{
+            from{opacity:0}
+            to{opacity:1}
+        }
+
+        @keyframes scaleIn{
+            from{opacity:0;transform:scale(0.92)}
+            to{opacity:1;transform:scale(1)}
+        }
+
+        @keyframes slideListItem{
+            from{opacity:0;transform:translateX(-8px)}
+            to{opacity:1;transform:translateX(0)}
+        }
+
+        @keyframes shimmer{
+            0%{transform:translateX(-100%)}
+            100%{transform:translateX(100%)}
+        }
+
+        @keyframes bounce{
+            0%,100%{transform:translateY(0)}
+            50%{transform:translateY(-6px)}
+        }
+
+        /* ── Header ── */
+        .header{
+            text-align:center;
+            padding:clamp(12px,3vw,20px) 0 clamp(8px,2vw,14px);
+        }
+
+        .header h1{
+            font-size:var(--font-xxl);
+            font-weight:800;
+            background:linear-gradient(135deg,#c084fc,#a855f7,#7c3aed);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            background-clip:text;
+        }
+
+        .header .subtitle{
+            font-size:var(--font-sm);
+            color:var(--text-dim);
+            margin-top:2px;
+        }
+
+        /* ── Card ── */
+        .card{
+            background:var(--surface);
+            backdrop-filter:blur(20px);
+            -webkit-backdrop-filter:blur(20px);
+            border:1px solid var(--border);
+            border-radius:var(--radius);
+            padding:var(--card-pad);
+            margin-bottom:clamp(8px,2vw,12px);
+            animation:fadeUp 0.35s ease both;
+        }
+
+        .card-title{
+            font-size:var(--font-sm);
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:clamp(1px,0.3vw,1.5px);
+            color:var(--purple-light);
+            margin-bottom:clamp(8px,2vw,14px);
+            display:flex;
+            align-items:center;
+            gap:6px;
+        }
+
+        .card-title .icon{font-size:clamp(0.85rem,2.5vw,1rem)}
+
+        /* ── Inputs ── */
+        .input-group{margin-bottom:clamp(6px,1.5vw,10px)}
+
+        .input-group label{
+            display:block;
+            font-size:var(--font-sm);
+            font-weight:600;
+            color:var(--text-dim);
+            margin-bottom:4px;
+        }
+
+        .input-wrap{position:relative}
+
+        .input-wrap input{
+            width:100%;
+            padding:clamp(10px,2.5vw,14px) clamp(12px,3vw,16px);
+            padding-right:clamp(28px,7vw,36px);
+            border:1.5px solid rgba(139,92,246,0.18);
+            border-radius:clamp(8px,2vw,12px);
+            background:rgba(12,10,26,0.7);
+            color:var(--text);
+            font-family:'Inter',sans-serif;
+            font-size:var(--font-lg);
+            font-weight:600;
+            outline:none;
+            transition:border-color 0.2s,box-shadow 0.2s;
+            min-height:var(--btn-h);
+        }
+
+        .input-wrap input:focus{
+            border-color:var(--purple);
+            box-shadow:0 0 0 3px rgba(168,85,247,0.12);
+        }
+
+        .input-wrap input::placeholder{color:var(--text-muted);font-weight:500}
+
+        .input-wrap .unit{
+            position:absolute;
+            right:clamp(10px,2.5vw,14px);top:50%;
+            transform:translateY(-50%);
+            color:var(--text-muted);
+            font-size:clamp(0.72rem,2vw,0.85rem);
+            font-weight:600;
+            pointer-events:none;
+        }
+
+        .input-row{display:flex;gap:clamp(6px,1.5vw,10px)}
+        .input-row .input-group{flex:1}
+
+        /* ── Buttons ── */
+        .btn{
+            width:100%;
+            padding:clamp(10px,2.5vw,14px) clamp(14px,3.5vw,20px);
+            border:none;
+            border-radius:clamp(8px,2vw,12px);
+            font-family:'Inter',sans-serif;
+            font-size:var(--font-md);
+            font-weight:700;
+            cursor:pointer;
+            transition:opacity 0.15s,transform 0.1s;
+            min-height:var(--btn-h);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+
+        .btn:active{transform:scale(0.97);opacity:0.85}
+
+        .btn-primary{
+            background:linear-gradient(135deg,var(--purple),#7c3aed);
+            color:#fff;
+            box-shadow:0 4px 16px rgba(168,85,247,0.3);
+        }
+
+        .btn-expense{
+            background:linear-gradient(135deg,var(--purple),#7c3aed);
+            color:#fff;
+            box-shadow:0 3px 12px rgba(168,85,247,0.25);
+        }
+
+        .btn-income{
+            background:linear-gradient(135deg,#22c55e,#16a34a);
+            color:#fff;
+            box-shadow:0 3px 12px rgba(34,197,94,0.25);
+        }
+
+        .btn-finish{
+            background:linear-gradient(135deg,#22c55e,#16a34a);
+            color:#fff;
+            box-shadow:0 3px 12px rgba(34,197,94,0.25);
+            margin-top:clamp(6px,1.5vw,10px);
+        }
+
+        .btn-finish:disabled{
+            opacity:0.3;
+            cursor:not-allowed;
+            transform:none;
+            box-shadow:none;
+        }
+
+        .btn-skip{
+            background:transparent;
+            color:var(--text-dim);
+            border:1px solid var(--border);
+            margin-top:6px;
+            font-size:var(--font-sm);
+            min-height:clamp(38px,9vw,44px);
+        }
+
+        .btn-reset{
+            background:transparent;
+            color:var(--text-muted);
+            border:1px solid var(--border);
+            font-size:var(--font-sm);
+            padding:clamp(8px,2vw,12px);
+            margin-top:6px;
+            min-height:clamp(38px,9vw,44px);
+        }
+
+        /* ── Stats ── */
+        .stats{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:clamp(6px,1.5vw,10px);
+            margin-bottom:4px;
+        }
+
+        .stat{
+            background:rgba(12,10,26,0.6);
+            border:1px solid var(--border);
+            border-radius:clamp(10px,2.5vw,14px);
+            padding:clamp(10px,2.5vw,14px) clamp(8px,2vw,12px);
+            text-align:center;
+        }
+
+        .stat .stat-label{
+            font-size:clamp(0.55rem,1.5vw,0.65rem);
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:0.8px;
+            color:var(--purple-dim);
+            margin-bottom:3px;
+        }
+
+        .stat .stat-value{
+            font-size:var(--font-xl);
+            font-weight:800;
+            letter-spacing:-0.3px;
+        }
+
+        .stat .stat-value.purple{color:var(--purple-light)}
+        .stat .stat-value.green{color:var(--green)}
+        .stat .stat-value.red{color:var(--red)}
+        .stat .stat-value.amber{color:var(--amber)}
+        .stat .stat-value.blue{color:var(--blue)}
+
+        /* ── Progress ── */
+        .progress-section{margin:clamp(10px,2.5vw,16px) 0 4px}
+
+        .progress-header{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:6px;
+        }
+
+        .progress-header span{
+            font-size:var(--font-sm);
+            font-weight:600;
+            color:var(--text-dim);
+            text-transform:uppercase;
+            letter-spacing:0.5px;
+        }
+
+        .progress-bar{
+            width:100%;
+            height:clamp(6px,1.5vw,10px);
+            background:rgba(139,92,246,0.1);
+            border-radius:99px;
+            overflow:hidden;
+        }
+
+        .progress-fill{
+            height:100%;
+            border-radius:99px;
+            background:linear-gradient(90deg,#7c3aed,var(--purple),var(--purple-light));
+            transition:width 0.5s ease;
+            position:relative;
+        }
+
+        .progress-fill::after{
+            content:'';
+            position:absolute;
+            top:0;left:0;right:0;bottom:0;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);
+            animation:shimmer 2s infinite;
+        }
+
+        .progress-fill.low{background:linear-gradient(90deg,#ef4444,var(--red))}
+        .progress-fill.medium{background:linear-gradient(90deg,#f59e0b,var(--amber))}
+
+        /* ── Day Indicator ── */
+        .day-indicator{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:clamp(6px,1.5vw,10px);
+            padding:clamp(8px,2vw,12px);
+            margin-bottom:2px;
+        }
+
+        .day-badge{
+            background:linear-gradient(135deg,var(--purple),#7c3aed);
+            color:#fff;
+            width:clamp(36px,9vw,48px);
+            height:clamp(36px,9vw,48px);
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:clamp(1rem,3vw,1.3rem);
+            font-weight:800;
+            box-shadow:0 3px 12px rgba(168,85,247,0.3);
+            flex-shrink:0;
+        }
+
+        .day-text{display:flex;flex-direction:column}
+
+        .day-text .dt-label{
+            font-size:clamp(0.55rem,1.5vw,0.65rem);
+            color:var(--purple-dim);
+            text-transform:uppercase;
+            letter-spacing:1px;
+            font-weight:600;
+        }
+
+        .day-text .dt-sub{
+            font-size:var(--font-sm);
+            color:var(--text-dim);
+        }
+
+        /* ── Delta ── */
+        .delta{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:6px;
+            padding:clamp(8px,2vw,12px);
+            border-radius:clamp(8px,2vw,12px);
+            margin:clamp(8px,2vw,12px) 0 2px;
+            font-size:var(--font-md);
+            font-weight:700;
+            animation:scaleIn 0.3s ease both;
+        }
+
+        .delta-positive{background:var(--green-dim);color:var(--green);border:1px solid rgba(74,222,128,0.2)}
+        .delta-negative{background:var(--red-dim);color:var(--red);border:1px solid rgba(248,113,113,0.2)}
+        .delta-zero{background:rgba(168,85,247,0.1);color:var(--purple-light);border:1px solid rgba(168,85,247,0.2)}
+
+        .delta .delta-icon{font-size:clamp(0.9rem,2.5vw,1.1rem)}
+        .delta .delta-hint{
+            font-size:clamp(0.58rem,1.5vw,0.68rem);
+            font-weight:500;
+            opacity:0.7;
+            display:block;
+        }
+
+        /* ── Toggle ── */
+        .toggle-row{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:clamp(8px,2vw,12px) clamp(10px,2.5vw,14px);
+            background:rgba(12,10,26,0.5);
+            border-radius:clamp(8px,2vw,12px);
+            border:1px solid var(--border);
+            margin-bottom:clamp(6px,1.5vw,10px);
+            cursor:pointer;
+            min-height:var(--btn-h);
+        }
+
+        .toggle-row .toggle-label{
+            font-size:var(--font-md);
+            font-weight:600;
+            color:var(--purple-light);
+            display:flex;
+            align-items:center;
+            gap:6px;
+        }
+
+        .toggle-switch{
+            width:clamp(38px,9vw,46px);
+            height:clamp(20px,5vw,24px);
+            background:rgba(139,92,246,0.15);
+            border-radius:99px;
+            position:relative;
+            transition:background 0.3s;
+            flex-shrink:0;
+        }
+
+        .toggle-switch::after{
+            content:'';
+            position:absolute;
+            top:3px;left:3px;
+            width:clamp(14px,3.5vw,18px);
+            height:clamp(14px,3.5vw,18px);
+            background:var(--text-muted);
+            border-radius:50%;
+            transition:all 0.3s;
+        }
+
+        .toggle-switch.on{background:var(--green-dim)}
+        .toggle-switch.on::after{
+            left:calc(100% - clamp(17px,4.2vw,21px));
+            background:var(--green);
+        }
+
+        /* ── Savings Panel ── */
+        .savings-panel{
+            overflow:hidden;
+            max-height:0;
+            opacity:0;
+            transition:max-height 0.35s ease,opacity 0.3s ease,margin 0.35s ease;
+            margin-bottom:0;
+        }
+
+        .savings-panel.open{
+            max-height:160px;
+            opacity:1;
+            margin-bottom:clamp(6px,1.5vw,10px);
+        }
+
+        .savings-inner{
+            background:rgba(12,10,26,0.5);
+            border:1px solid rgba(74,222,128,0.12);
+            border-radius:clamp(8px,2vw,12px);
+            padding:clamp(10px,2.5vw,14px);
+        }
+
+        .savings-inner .sp-header{
+            display:flex;
+            justify-content:space-between;
+            margin-bottom:8px;
+        }
+
+        .savings-inner .sp-label{font-size:var(--font-sm);color:var(--text-dim);font-weight:600}
+        .savings-inner .sp-value{font-size:var(--font-lg);font-weight:800;color:var(--green)}
+
+        .savings-slider{
+            width:100%;
+            -webkit-appearance:none;
+            appearance:none;
+            height:clamp(5px,1.2vw,8px);
+            border-radius:99px;
+            background:rgba(139,92,246,0.15);
+            outline:none;
+        }
+
+        .savings-slider::-webkit-slider-thumb{
+            -webkit-appearance:none;
+            width:clamp(20px,5vw,26px);
+            height:clamp(20px,5vw,26px);
+            border-radius:50%;
+            background:linear-gradient(135deg,var(--green),#22c55e);
+            cursor:pointer;
+        }
+
+        .savings-slider::-moz-range-thumb{
+            width:clamp(20px,5vw,26px);
+            height:clamp(20px,5vw,26px);
+            border-radius:50%;
+            background:linear-gradient(135deg,var(--green),#22c55e);
+            cursor:pointer;
+            border:none;
+        }
+
+        .savings-marks{
+            display:flex;
+            justify-content:space-between;
+            margin-top:4px;
+            padding:0 2px;
+        }
+
+        .savings-marks span{font-size:clamp(0.55rem,1.3vw,0.62rem);color:var(--text-muted);font-weight:600}
+
+        /* ── Piggy Bank ── */
+        .piggy-card{
+            background:linear-gradient(135deg,rgba(34,197,94,0.08),rgba(168,85,247,0.08));
+            border:1px solid rgba(74,222,128,0.15);
+            border-radius:var(--radius);
+            padding:clamp(12px,3vw,16px);
+            margin-bottom:clamp(6px,1.5vw,10px);
+        }
+
+        .piggy-header{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            margin-bottom:4px;
+        }
+
+        .piggy-header .piggy-title{
+            font-size:var(--font-sm);
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:1.2px;
+            color:var(--green);
+            display:flex;
+            align-items:center;
+            gap:6px;
+        }
+
+        .piggy-balance{
+            font-size:var(--font-xl);
+            font-weight:800;
+            color:var(--green);
+            text-align:center;
+        }
+
+        .piggy-hint{
+            font-size:var(--font-sm);
+            color:var(--purple-dim);
+            text-align:center;
+            margin-top:2px;
+        }
+
+        /* ── Today Transactions ── */
+        .today-txns{margin-top:clamp(8px,2vw,12px)}
+
+        .today-txns .te-title{
+            font-size:var(--font-sm);
+            font-weight:700;
+            text-transform:uppercase;
+            letter-spacing:1px;
+            color:var(--text-dim);
+            margin-bottom:6px;
+        }
+
+        .te-item{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:clamp(7px,1.8vw,10px) clamp(8px,2vw,12px);
+            background:rgba(12,10,26,0.5);
+            border-radius:clamp(6px,1.5vw,10px);
+            margin-bottom:4px;
+            border:1px solid rgba(139,92,246,0.06);
+            animation:slideListItem 0.25s ease both;
+        }
+
+        .te-item .te-amount{font-size:var(--font-md);font-weight:700;color:var(--text)}
+
+        .te-item .te-type{
+            font-size:clamp(0.55rem,1.3vw,0.62rem);
+            font-weight:700;
+            padding:2px 6px;
+            border-radius:4px;
+            margin-right:6px;
+            flex-shrink:0;
+        }
+
+        .te-item .te-type.expense{background:rgba(168,85,247,0.15);color:var(--purple-light)}
+        .te-item .te-type.income{background:var(--green-dim);color:var(--green)}
+
+        .te-item .te-remove{
+            background:none;
+            border:none;
+            color:var(--red);
+            font-size:clamp(0.85rem,2.2vw,1rem);
+            cursor:pointer;
+            padding:4px 6px;
+            border-radius:4px;
+            flex-shrink:0;
+        }
+
+        .te-total{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:clamp(7px,1.8vw,10px) clamp(8px,2vw,12px);
+            background:rgba(168,85,247,0.08);
+            border-radius:clamp(6px,1.5vw,10px);
+            margin-top:6px;
+            border:1px solid rgba(168,85,247,0.1);
+        }
+
+        .te-total .te-total-label{font-size:var(--font-sm);font-weight:600;color:var(--purple-light)}
+        .te-total .te-total-value{font-size:var(--font-md);font-weight:800;color:var(--purple-light)}
+
+        /* ── Motivation ── */
+        .motivation{
+            text-align:center;
+            padding:clamp(6px,1.5vw,10px);
+            font-size:var(--font-sm);
+            color:var(--purple-light);
+            font-weight:600;
+        }
+
+        /* ── Finished ── */
+        .finished{text-align:center;padding:clamp(14px,3.5vw,22px)}
+        .finished .fin-icon{
+            font-size:clamp(1.6rem,5vw,2.2rem);
+            display:block;
+            margin-bottom:6px;
+            animation:bounce 1s ease infinite;
+        }
+        .finished .fin-title{font-size:var(--font-lg);font-weight:800;color:var(--purple-light);margin-bottom:2px}
+        .finished .fin-sub{font-size:var(--font-sm);color:var(--text-dim)}
+
+        /* ── History ── */
+        .history-list{list-style:none;max-height:clamp(200px,40vw,300px);overflow-y:auto}
+        .history-list::-webkit-scrollbar{width:4px}
+        .history-list::-webkit-scrollbar-track{background:transparent}
+        .history-list::-webkit-scrollbar-thumb{background:rgba(139,92,246,0.2);border-radius:4px}
+
+        .history-item{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:clamp(8px,2vw,12px) clamp(8px,2vw,12px);
+            border-radius:clamp(8px,2vw,12px);
+            margin-bottom:4px;
+            background:rgba(12,10,26,0.5);
+            border:1px solid rgba(139,92,246,0.06);
+        }
+
+        .hi-left{display:flex;align-items:center;gap:clamp(6px,1.5vw,10px);min-width:0}
+
+        .hi-day{
+            background:linear-gradient(135deg,var(--purple),#7c3aed);
+            color:#fff;
+            width:clamp(26px,6.5vw,32px);
+            height:clamp(26px,6.5vw,32px);
+            border-radius:50%;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-size:clamp(0.62rem,1.6vw,0.75rem);
+            font-weight:700;
+            flex-shrink:0;
+        }
+
+        .hi-info{display:flex;flex-direction:column;min-width:0}
+        .hi-spent{font-size:var(--font-md);font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .hi-limit{font-size:clamp(0.55rem,1.3vw,0.65rem);color:var(--purple-dim)}
+
+        .hi-delta{
+            font-size:clamp(0.65rem,1.7vw,0.78rem);
+            font-weight:700;
+            padding:3px 6px;
+            border-radius:6px;
+            flex-shrink:0;
+        }
+
+        .hi-delta.pos{background:var(--green-dim);color:var(--green)}
+        .hi-delta.neg{background:var(--red-dim);color:var(--red)}
+
+        .empty-history{text-align:center;padding:clamp(16px,4vw,24px) 0;color:var(--text-muted);font-size:var(--font-md)}
+        .empty-history .eh-icon{font-size:clamp(1.3rem,4vw,1.8rem);display:block;margin-bottom:6px}
+
+        /* ── Toast ── */
+        .toast{
+            position:fixed;
+            bottom:clamp(14px,3.5vw,24px);
+            left:50%;
+            transform:translateX(-50%) translateY(80px);
+            padding:clamp(8px,2vw,12px) clamp(14px,3.5vw,22px);
+            border-radius:clamp(8px,2vw,12px);
+            font-size:var(--font-md);
+            font-weight:600;
+            font-family:'Inter',sans-serif;
+            z-index:200;
+            opacity:0;
+            transition:transform 0.35s ease,opacity 0.35s ease;
+            pointer-events:none;
+            backdrop-filter:blur(12px);
+            -webkit-backdrop-filter:blur(12px);
+            max-width:90%;
+            text-align:center;
+            will-change:transform,opacity;
+        }
+
+        .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+        .toast-error{background:rgba(239,68,68,0.92);color:#fff}
+        .toast-success{background:rgba(34,197,94,0.92);color:#fff}
+        .toast-info{background:rgba(168,85,247,0.92);color:#fff}
+
+        /* ── Dialog ── */
+        .overlay{
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.6);
+            backdrop-filter:blur(6px);
+            -webkit-backdrop-filter:blur(6px);
+            z-index:150;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            animation:fadeIn 0.2s ease both;
+        }
+
+        .dialog{
+            background:#1a1530;
+            border:1px solid rgba(139,92,246,0.2);
+            border-radius:var(--radius);
+            padding:clamp(18px,4.5vw,26px);
+            max-width:340px;
+            width:90%;
+            text-align:center;
+            animation:scaleIn 0.3s ease both;
+        }
+
+        .dialog h3{font-size:var(--font-lg);color:var(--purple-light);margin-bottom:6px}
+        .dialog p{font-size:var(--font-sm);color:var(--text-dim);margin-bottom:clamp(12px,3vw,18px);line-height:1.4}
+
+        .dialog-btns{display:flex;gap:clamp(6px,1.5vw,10px)}
+
+        .dialog-btns button{
+            flex:1;
+            padding:clamp(9px,2.2vw,13px);
+            border-radius:clamp(6px,1.5vw,10px);
+            border:none;
+            font-family:'Inter',sans-serif;
+            font-size:var(--font-sm);
+            font-weight:700;
+            cursor:pointer;
+            min-height:var(--btn-h);
+        }
+
+        .dlg-cancel{background:rgba(139,92,246,0.1);color:var(--purple-light);border:1px solid rgba(139,92,246,0.15)}
+        .dlg-confirm{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff}
+
+        .hidden{display:none!important}
+
+        /* ── Mobile Bottom Bar ── */
+        .mobile-actions{
+            position:fixed;
+            bottom:0;
+            left:0;
+            right:0;
+            background:rgba(12,10,26,0.95);
+            backdrop-filter:blur(16px);
+            -webkit-backdrop-filter:blur(16px);
+            border-top:1px solid var(--border);
+            padding:clamp(6px,1.5vw,10px) clamp(8px,2vw,14px);
+            padding-bottom:max(clamp(6px,1.5vw,10px),env(safe-area-inset-bottom));
+            z-index:100;
+            display:none;
+            gap:clamp(6px,1.5vw,10px);
+        }
+
+        .mobile-actions .btn{
+            min-height:clamp(40px,10vw,48px);
+            font-size:clamp(0.72rem,2vw,0.82rem);
+            padding:clamp(8px,2vw,12px);
+        }
+
+        .ma-expense{
+            flex:1;
+            background:linear-gradient(135deg,var(--purple),#7c3aed);
+            color:#fff;
+            box-shadow:0 2px 10px rgba(168,85,247,0.3);
+        }
+
+        .ma-income{
+            flex:1;
+            background:linear-gradient(135deg,#22c55e,#16a34a);
+            color:#fff;
+            box-shadow:0 2px 10px rgba(34,197,94,0.3);
+        }
+
+        .ma-finish{
+            background:rgba(74,222,128,0.12);
+            color:var(--green);
+            border:1px solid rgba(74,222,128,0.2);
+            flex:0 0 auto;
+            padding:clamp(8px,2vw,12px) clamp(12px,3vw,16px);
+        }
+
+        /* ── Responsive Breakpoints ── */
+
+        /* Small phones */
+        @media(max-width:360px){
+            :root{
+                --btn-h:42px;
+            }
+            .stats{gap:5px}
+            .stat{padding:8px 6px}
+            .stat .stat-value{font-size:1rem}
+        }
+
+        /* Phones */
+        @media(min-width:361px) and (max-width:480px){
+            .mobile-actions{display:flex}
+        }
+
+        /* Large phones / small tablets */
+        @media(min-width:481px) and (max-width:768px){
+            .wrapper{max-width:560px;padding:16px 16px 120px}
+            .mobile-actions{display:flex}
+        }
+
+        /* Tablets */
+        @media(min-width:769px) and (max-width:1024px){
+            .wrapper{max-width:600px;padding:20px 24px 40px}
+            .stats{grid-template-columns:1fr 1fr 1fr}
+        }
+
+        /* Desktop */
+        @media(min-width:1025px){
+            .wrapper{max-width:520px;padding:20px 16px 40px}
+        }
+
+        /* Very large screens */
+        @media(min-width:1440px){
+            html{font-size:18px}
+            .wrapper{max-width:600px}
+        }
+
+        /* Landscape phones */
+        @media(max-height:500px) and (orientation:landscape){
+            .header{padding:6px 0 4px}
+            .header h1{font-size:1.2rem}
+            .wrapper{padding-bottom:20px}
+            .mobile-actions{display:none!important}
+        }
+
+        /* Foldable / dual screen */
+        @media(min-width:768px) and (max-width:1024px) and (max-height:500px){
+            .wrapper{max-width:90vw;padding:10px 20px 20px}
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="header">
+        <h1>Бюджет-трекер</h1>
+        <div class="subtitle">Умное распределение дохода по дням</div>
+    </div>
+
+    <!-- Setup -->
+    <div class="card" id="setup-card">
+        <div class="card-title"><span class="icon">⚙️</span> Настройка</div>
+        <div class="input-row">
+            <div class="input-group">
+                <label for="income-input">Доход</label>
+                <div class="input-wrap">
+                    <input type="text" id="income-input" placeholder="5 000" inputmode="decimal" autocomplete="off">
+                    <span class="unit">₽</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="days-input">Дней</label>
+                <div class="input-wrap">
+                    <input type="number" id="days-input" placeholder="5" min="1" step="1" inputmode="numeric">
+                    <span class="unit">дн.</span>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary" id="start-btn">Начать</button>
+    </div>
+
+    <!-- Main -->
+    <div class="card hidden" id="main-card">
+        <div class="day-indicator">
+            <div class="day-badge" id="day-badge">1</div>
+            <div class="day-text">
+                <span class="dt-label">Текущий день</span>
+                <span class="dt-sub" id="day-sub">из 5 дней</span>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Дневной лимит</div>
+                <div class="stat-value purple" id="daily-limit">0 ₽</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Остаток</div>
+                <div class="stat-value blue" id="remaining-budget">0 ₽</div>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-header">
+                <span>Использовано</span>
+                <span id="progress-pct">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+            </div>
+        </div>
+
+        <div class="delta hidden" id="delta-box"></div>
+
+        <!-- Savings Toggle -->
+        <div class="toggle-row" id="savings-toggle">
+            <span class="toggle-label">🐷 Копилка</span>
+            <div class="toggle-switch" id="toggle-switch"></div>
+        </div>
+
+        <!-- Savings Panel -->
+        <div class="savings-panel" id="savings-panel">
+            <div class="savings-inner">
+                <div class="sp-header">
+                    <span class="sp-label">Процент в копилку</span>
+                    <span class="sp-value" id="savings-pct-value">50%</span>
+                </div>
+                <input type="range" class="savings-slider" id="savings-slider" min="10" max="100" step="5" value="50">
+                <div class="savings-marks">
+                    <span>10%</span><span>30%</span><span>50%</span><span>70%</span><span>100%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Piggy Bank -->
+        <div class="piggy-card hidden" id="piggy-card">
+            <div class="piggy-header">
+                <div class="piggy-title"><span class="icon">🐷</span> Копилка</div>
+            </div>
+            <div class="piggy-balance" id="piggy-balance">0 ₽</div>
+            <div class="piggy-hint" id="piggy-hint">50% экономии в копилку</div>
+        </div>
+
+        <!-- Action Section -->
+        <div id="action-section">
+            <div class="input-group" style="margin-top:10px;margin-bottom:0">
+                <label for="amount-input">Сумма</label>
+                <div class="input-wrap">
+                    <input type="text" id="amount-input" placeholder="350" inputmode="decimal" autocomplete="off">
+                    <span class="unit">₽</span>
+                </div>
+            </div>
+
+            <div class="input-row" style="margin-top:6px">
+                <button class="btn btn-expense" id="add-expense-btn" style="margin-top:0">− Трата</button>
+                <button class="btn btn-income" id="add-income-btn" style="margin-top:0">+ Доход</button>
+            </div>
+
+            <!-- Today's transactions -->
+            <div class="today-txns hidden" id="today-txns">
+                <div class="te-title">Операции за сегодня</div>
+                <div id="te-list"></div>
+                <div class="te-total">
+                    <span class="te-total-label">Итого трат</span>
+                    <span class="te-total-value" id="te-total-value">0 ₽</span>
+                </div>
+            </div>
+
+            <button class="btn btn-finish" id="finish-day-btn" disabled>Завершить день</button>
+            <button class="btn btn-skip" id="skip-day-btn">Пропустить день</button>
+        </div>
+
+        <div class="finished hidden" id="finished-msg">
+            <span class="fin-icon">🎉</span>
+            <div class="fin-title">Период завершён!</div>
+            <div class="fin-sub" id="fin-sub">Все дни заполнены</div>
+            <button class="btn btn-primary" id="new-period-btn" style="margin-top:14px">Начать новый период</button>
+        </div>
+
+        <div class="motivation" id="motivation"></div>
+
+        <button class="btn btn-reset" id="reset-btn">Сбросить</button>
+    </div>
+
+    <!-- History -->
+    <div class="card hidden" id="history-card">
+        <div class="card-title"><span class="icon">📋</span> История</div>
+        <ul class="history-list" id="history-list">
+            <li class="empty-history">
+                <span class="eh-icon">📝</span>
+                Пока пусто
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- Mobile Bottom Bar -->
+<div class="mobile-actions hidden" id="mobile-actions">
+    <button class="btn ma-expense" id="ma-expense-btn">− Трата</button>
+    <button class="btn ma-income" id="ma-income-btn">+ Доход</button>
+    <button class="btn ma-finish" id="ma-finish-btn">✓</button>
+</div>
+
+<!-- Toast -->
+<div class="toast hidden" id="toast"></div>
+
+<!-- Dialog -->
+<div class="overlay hidden" id="overlay">
+    <div class="dialog">
+        <h3 id="dlg-title">Сбросить?</h3>
+        <p id="dlg-text">Весь прогресс будет удалён.</p>
+        <div class="dialog-btns">
+            <button class="dlg-cancel" id="dlg-cancel">Отмена</button>
+            <button class="dlg-confirm" id="dlg-confirm">Сбросить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'budget_tracker_mobile_v2';
+const $ = id => document.getElementById(id);
+
+const el = {
+    setupCard: $('setup-card'),
+    mainCard: $('main-card'),
+    historyCard: $('history-card'),
+    incomeInput: $('income-input'),
+    daysInput: $('days-input'),
+    startBtn: $('start-btn'),
+    dayBadge: $('day-badge'),
+    daySub: $('day-sub'),
+    dailyLimit: $('daily-limit'),
+    remainingBudget: $('remaining-budget'),
+    progressPct: $('progress-pct'),
+    progressFill: $('progress-fill'),
+    deltaBox: $('delta-box'),
+    piggyCard: $('piggy-card'),
+    piggyBalance: $('piggy-balance'),
+    piggyHint: $('piggy-hint'),
+    savingsToggle: $('savings-toggle'),
+    toggleSwitch: $('toggle-switch'),
+    savingsPanel: $('savings-panel'),
+    savingsSlider: $('savings-slider'),
+    savingsPctValue: $('savings-pct-value'),
+    actionSection: $('action-section'),
+    amountInput: $('amount-input'),
+    addExpenseBtn: $('add-expense-btn'),
+    addIncomeBtn: $('add-income-btn'),
+    todayTxns: $('today-txns'),
+    teList: $('te-list'),
+    teTotalValue: $('te-total-value'),
+    finishDayBtn: $('finish-day-btn'),
+    skipDayBtn: $('skip-day-btn'),
+    finishedMsg: $('finished-msg'),
+    finSub: $('fin-sub'),
+    newPeriodBtn: $('new-period-btn'),
+    motivation: $('motivation'),
+    resetBtn: $('reset-btn'),
+    historyList: $('history-list'),
+    mobileActions: $('mobile-actions'),
+    maExpenseBtn: $('ma-expense-btn'),
+    maIncomeBtn: $('ma-income-btn'),
+    maFinishBtn: $('ma-finish-btn'),
+    toast: $('toast'),
+    overlay: $('overlay'),
+    dlgCancel: $('dlg-cancel'),
+    dlgConfirm: $('dlg-confirm')
+};
+
+let state = null;
+let toastTimer = null;
+
+function load() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return null;
+}
+
+function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function clear() {
+    localStorage.removeItem(STORAGE_KEY);
+    state = null;
+}
+
+function money(n) {
+    if (n === undefined || n === null || isNaN(n)) return '0 ₽';
+    const abs = Math.abs(n);
+    const s = abs % 1 === 0 ? abs.toFixed(0) : abs.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+    return (n < 0 ? '-' : '') + s.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ₽';
+}
+
+function parseAmount(raw) {
+    const cleaned = raw.replace(/[^\d.,]/g, '').replace(',', '.');
+    if (cleaned === '') return null;
+    const num = parseFloat(cleaned);
+    if (isNaN(num) || num <= 0) return null;
+    return num;
+}
+
+function showToast(msg, type) {
+    clearTimeout(toastTimer);
+    el.toast.className = 'toast toast-' + (type || 'error');
+    el.toast.textContent = msg;
+    el.toast.classList.remove('hidden');
+    void el.toast.offsetWidth;
+    el.toast.classList.add('show');
+    toastTimer = setTimeout(function() {
+        el.toast.classList.remove('show');
+        setTimeout(function() { el.toast.classList.add('hidden'); }, 400);
+    }, 2200);
+}
+
+function showConfirm(onConfirm) {
+    el.overlay.classList.remove('hidden');
+    el.dlgConfirm.onclick = function() { el.overlay.classList.add('hidden'); onConfirm(); };
+    el.dlgCancel.onclick = function() { el.overlay.classList.add('hidden'); };
+}
+
+const motivations = [
+    '💪 Каждая сэкономленная копейка — шаг к цели!',
+    '🎯 Вы контролируете свои финансы!',
+    '⭐ Отличная дисциплина! Так держать!',
+    '🚀 Продолжайте в том же духе!',
+    '🌟 Вы на верном пути!',
+    '💎 Разумный подход к деньгам — суперсила!'
+];
+
+function getMotivation(delta) {
+    if (delta > 0) return '💚 Экономия +' + money(delta);
+    if (delta < 0) return '⚡ Перерасход ' + money(delta);
+    return '⚖️ Точно в лимит!';
+}
+
+function render() {
+    if (!state || !state.active) {
+        el.setupCard.classList.remove('hidden');
+        el.mainCard.classList.add('hidden');
+        el.historyCard.classList.add('hidden');
+        el.mobileActions.classList.add('hidden');
+        setTimeout(function() { el.incomeInput.focus(); }, 200);
+        return;
+    }
+
+    el.setupCard.classList.add('hidden');
+    el.mainCard.classList.remove('hidden');
+    el.historyCard.classList.remove('hidden');
+
+    var limit = state.daysLeft > 0 ? state.budget / state.daysLeft : 0;
+    var dayNum = state.totalDays - state.daysLeft + 1;
+    var spentPct = state.income > 0 ? Math.min(100, (state.totalSpent / state.income) * 100) : 0;
+    var finished = state.daysLeft <= 0;
+
+    el.dayBadge.textContent = dayNum;
+    el.daySub.textContent = state.daysLeft > 0 ? 'из ' + state.totalDays + ' дней' : 'все дни пройдены';
+
+    el.dailyLimit.textContent = money(limit);
+    el.remainingBudget.textContent = money(state.budget);
+    el.remainingBudget.className = 'stat-value ' + (state.budget >= 0 ? 'blue' : 'red');
+
+    el.progressPct.textContent = Math.round(spentPct) + '%';
+    el.progressFill.style.width = spentPct + '%';
+    el.progressFill.className = 'progress-fill' + (spentPct > 85 ? ' low' : spentPct > 60 ? ' medium' : '');
+
+    el.actionSection.classList.toggle('hidden', finished);
+    el.finishedMsg.classList.toggle('hidden', !finished);
+    el.mobileActions.classList.toggle('hidden', finished);
+
+    if (state.history.length > 0 && !finished) {
+        var last = state.history[state.history.length - 1];
+        el.deltaBox.classList.remove('hidden', 'delta-positive', 'delta-negative', 'delta-zero');
+        if (last.delta > 0) {
+            el.deltaBox.classList.add('delta-positive');
+            el.deltaBox.innerHTML = '<span class="delta-icon">💚</span><div class="delta-text">Экономия +' + money(last.delta) + '<span class="delta-hint">Лимит вырос</span></div>';
+        } else if (last.delta < 0) {
+            el.deltaBox.classList.add('delta-negative');
+            el.deltaBox.innerHTML = '<span class="delta-icon">🔴</span><div class="delta-text">Перерасход ' + money(last.delta) + '<span class="delta-hint">Лимит уменьшился</span></div>';
+        } else {
+            el.deltaBox.classList.add('delta-zero');
+            el.deltaBox.innerHTML = '<span class="delta-icon">⚖️</span><div class="delta-text">Точно в лимит<span class="delta-hint">Идеально!</span></div>';
+        }
+    } else {
+        el.deltaBox.classList.add('hidden');
+    }
+
+    if (!finished) {
+        el.motivation.textContent = state.history.length === 0
+            ? '📝 Внесите операцию и завершите день'
+            : getMotivation(state.history[state.history.length - 1].delta);
+    } else {
+        var totalIncome = state.history.reduce(function(s, h) { return s + (h.income || 0); }, 0);
+        var sub = 'Потрачено: ' + money(state.totalSpent);
+        if (totalIncome > 0) sub += ' · Доходы: ' + money(totalIncome);
+        sub += ' · Копилка: ' + money(state.piggyBank);
+        if (state.budget > 0) sub += ' · Остаток: ' + money(state.budget);
+        el.finSub.textContent = sub;
+    }
+
+    el.toggleSwitch.classList.toggle('on', state.savingsMode);
+    if (state.savingsMode) {
+        el.savingsPanel.classList.add('open');
+        el.piggyCard.classList.remove('hidden');
+        el.piggyBalance.textContent = money(state.piggyBank);
+        el.piggyHint.textContent = state.savingsPercent + '% экономии в копилку';
+        el.savingsSlider.value = state.savingsPercent;
+        el.savingsPctValue.textContent = state.savingsPercent + '%';
+    } else {
+        el.savingsPanel.classList.remove('open');
+        el.piggyCard.classList.add('hidden');
+    }
+
+    renderTodayTxns();
+    renderHistory();
+}
+
+function renderTodayTxns() {
+    if (!state || state.todayTxns.length === 0) {
+        el.todayTxns.classList.add('hidden');
+        el.finishDayBtn.disabled = true;
+        return;
+    }
+
+    el.todayTxns.classList.remove('hidden');
+    el.finishDayBtn.disabled = false;
+
+    var totalExpense = state.todayTxns.filter(function(t) { return t.type === 'expense'; }).reduce(function(s, t) { return s + t.amount; }, 0);
+    el.teTotalValue.textContent = money(totalExpense);
+
+    el.teList.innerHTML = state.todayTxns.map(function(t, i) {
+        var isExpense = t.type === 'expense';
+        return '<div class="te-item">' +
+            '<span class="te-type ' + (isExpense ? 'expense' : 'income') + '">' + (isExpense ? '−' : '+') + '</span>' +
+            '<span class="te-amount">' + money(t.amount) + '</span>' +
+            '<button class="te-remove" data-idx="' + i + '">✕</button>' +
+        '</div>';
+    }).join('');
+
+    var removes = el.teList.querySelectorAll('.te-remove');
+    for (var i = 0; i < removes.length; i++) {
+        removes[i].addEventListener('click', function() {
+            state.todayTxns.splice(parseInt(this.dataset.idx), 1);
+            save();
+            render();
+        });
+    }
+}
+
+function renderHistory() {
+    if (!state || state.history.length === 0) {
+        el.historyList.innerHTML = '<li class="empty-history"><span class="eh-icon">📝</span>Пока пусто</li>';
+        return;
+    }
+
+    el.historyList.innerHTML = state.history.slice().reverse().map(function(h) {
+        var cls = h.delta >= 0 ? 'pos' : 'neg';
+        var sign = h.delta >= 0 ? '+' : '';
+        return '<li class="history-item">' +
+            '<div class="hi-left">' +
+                '<div class="hi-day">' + h.day + '</div>' +
+                '<div class="hi-info">' +
+                    '<span class="hi-spent">' + money(h.spent) + '</span>' +
+                    '<span class="hi-limit">Лимит: ' + money(h.limit) + '</span>' +
+                '</div>' +
+            '</div>' +
+            '<span class="hi-delta ' + cls + '">' + sign + money(h.delta) + '</span>' +
+        '</li>';
+    }).join('');
+}
+
+/* ── Events ── */
+el.newPeriodBtn.addEventListener('click', function() {
+    var carryPiggy = state.piggyBank;
+    var carryBudget = state.budget;
+
+    state = {
+        active: true,
+        income: state.income,
+        totalDays: state.totalDays,
+        daysLeft: state.totalDays,
+        budget: state.income + carryBudget,
+        totalSpent: 0,
+        history: [],
+        todayTxns: [],
+        savingsMode: state.savingsMode,
+        savingsPercent: state.savingsPercent,
+        piggyBank: carryPiggy,
+        prevPiggyBank: carryPiggy,
+        prevRemainder: carryBudget
+    };
+
+    save();
+    var msg = 'Новый период!';
+    if (carryPiggy > 0) msg += ' Копилка: ' + money(carryPiggy);
+    if (carryBudget > 0) msg += ' Остаток: ' + money(carryBudget);
+    showToast(msg, 'success');
+    render();
+});
+
+el.startBtn.addEventListener('click', startPlanning);
+el.incomeInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') el.daysInput.focus(); });
+el.daysInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') startPlanning(); });
+
+el.addExpenseBtn.addEventListener('click', function() { addTransaction('expense'); });
+el.addIncomeBtn.addEventListener('click', function() { addTransaction('income'); });
+el.amountInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        if (el.amountInput.dataset.forceIncome === '1') {
+            addTransaction('income');
+        } else {
+            addTransaction('expense');
+        }
+    }
+});
+
+el.maExpenseBtn.addEventListener('click', function() {
+    el.amountInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.amountInput.dataset.forceIncome = '';
+    setTimeout(function() { el.amountInput.focus(); }, 350);
+});
+
+el.maIncomeBtn.addEventListener('click', function() {
+    el.amountInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.amountInput.dataset.forceIncome = '1';
+    setTimeout(function() { el.amountInput.focus(); }, 350);
+});
+
+el.maFinishBtn.addEventListener('click', finishDay);
+el.finishDayBtn.addEventListener('click', finishDay);
+
+el.skipDayBtn.addEventListener('click', function() {
+    if (!state || state.daysLeft <= 0) return;
+    var limit = state.budget / state.daysLeft;
+    var delta = limit;
+    var dayNum = state.totalDays - state.daysLeft + 1;
+    var piggyAdded = 0;
+    if (state.savingsMode && delta > 0) {
+        piggyAdded = delta * (state.savingsPercent / 100);
+        state.piggyBank += piggyAdded;
+        state.budget -= piggyAdded;
+    }
+    state.history.push({ day: dayNum, limit: limit, spent: 0, delta: delta, piggyAdded: piggyAdded });
+    state.daysLeft -= 1;
+    state.todayTxns = [];
+    save();
+    showToast('День пропущен', 'info');
+    render();
+});
+
+el.savingsToggle.addEventListener('click', function() {
+    state.savingsMode = !state.savingsMode;
+    save();
+    render();
+});
+
+el.savingsSlider.addEventListener('input', function() {
+    state.savingsPercent = parseInt(el.savingsSlider.value);
+    el.savingsPctValue.textContent = state.savingsPercent + '%';
+    el.piggyHint.textContent = state.savingsPercent + '% экономии в копилку';
+    save();
+});
+
+el.resetBtn.addEventListener('click', function() {
+    showConfirm(function() {
+        clear();
+        showToast('Прогресс сброшен', 'info');
+        render();
+    });
+});
+
+el.overlay.addEventListener('click', function(e) {
+    if (e.target === el.overlay) el.overlay.classList.add('hidden');
+});
+
+function startPlanning() {
+    var income = parseAmount(el.incomeInput.value);
+    var days = parseInt(el.daysInput.value, 10);
+
+    if (!income || income <= 0) {
+        showToast('Введите сумму дохода', 'error');
+        el.incomeInput.focus();
+        return;
+    }
+    if (!days || days <= 0) {
+        showToast('Введите количество дней', 'error');
+        el.daysInput.focus();
+        return;
+    }
+
+    var carryPiggy = state ? state.piggyBank : 0;
+    var carryBudget = state ? state.budget : 0;
+
+    state = {
+        active: true,
+        income: income,
+        totalDays: days,
+        daysLeft: days,
+        budget: income + carryBudget,
+        totalSpent: 0,
+        history: [],
+        todayTxns: [],
+        savingsMode: state ? state.savingsMode : false,
+        savingsPercent: state ? state.savingsPercent : 50,
+        piggyBank: carryPiggy,
+        prevPiggyBank: carryPiggy,
+        prevRemainder: carryBudget
+    };
+
+    save();
+    el.incomeInput.value = '';
+    el.daysInput.value = '';
+    var msg = 'Лимит: ' + money(income / days) + '/день';
+    if (carryBudget > 0) msg += ' (+' + money(carryBudget) + ' остаток)';
+    showToast(msg, 'success');
+    render();
+}
+
+function addTransaction(type) {
+    var raw = el.amountInput.value.trim();
+    if (raw === '') {
+        showToast('Введите сумму', 'error');
+        el.amountInput.focus();
+        return;
+    }
+
+    var amount = parseAmount(raw);
+    if (!amount) {
+        showToast('Некорректная сумма', 'error');
+        return;
+    }
+
+    if (!state || state.daysLeft <= 0) return;
+
+    if (type === 'expense' && state.budget <= 0) {
+        showToast('Бюджет исчерпан', 'error');
+        return;
+    }
+
+    state.todayTxns.push({ type: type, amount: amount });
+    save();
+    el.amountInput.value = '';
+    el.amountInput.dataset.forceIncome = '';
+
+    if (type === 'expense') {
+        showToast('Трата ' + money(amount) + ' добавлена', 'info');
+    } else {
+        showToast('Доход ' + money(amount) + ' добавлен', 'success');
+    }
+
+    render();
+    setTimeout(function() { el.amountInput.focus(); }, 100);
+}
+
+function finishDay() {
+    if (!state || state.daysLeft <= 0) return;
+    if (state.todayTxns.length === 0) {
+        showToast('Добавьте операцию или пропустите день', 'info');
+        return;
+    }
+
+    var limit = state.budget / state.daysLeft;
+    var totalExpense = state.todayTxns.filter(function(t) { return t.type === 'expense'; }).reduce(function(s, t) { return s + t.amount; }, 0);
+    var totalIncome = state.todayTxns.filter(function(t) { return t.type === 'income'; }).reduce(function(s, t) { return s + t.amount; }, 0);
+    var delta = limit - totalExpense;
+    var dayNum = state.totalDays - state.daysLeft + 1;
+
+    var piggyAdded = 0;
+    if (state.savingsMode && delta > 0) {
+        piggyAdded = delta * (state.savingsPercent / 100);
+        state.piggyBank += piggyAdded;
+        state.budget -= (totalExpense + piggyAdded);
+    } else {
+        state.budget -= totalExpense;
+    }
+
+    state.budget += totalIncome;
+    state.totalSpent += totalExpense;
+    state.history.push({ day: dayNum, limit: limit, spent: totalExpense, delta: delta, piggyAdded: piggyAdded, income: totalIncome });
+    state.daysLeft -= 1;
+    state.todayTxns = [];
+
+    save();
+
+    if (piggyAdded > 0) {
+        showToast('+' + money(piggyAdded) + ' в копилку 🐷', 'success');
+    } else if (delta > 0) {
+        showToast('Экономия +' + money(delta) + ' 🎉', 'success');
+    } else if (delta < 0) {
+        showToast('Перерасход ' + money(delta), 'error');
+    } else {
+        showToast('Точно в лимит! ⚖️', 'info');
+    }
+
+    render();
+}
+
+/* ── Init ── */
+state = load();
+render();
+</script>
+</body>
+</html>
